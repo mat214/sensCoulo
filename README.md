@@ -18,3 +18,41 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 - ADUM1201 : isolateur magnétique pour isoler la connexion série entre l'ESP32 et le MPPTvictron. **Attention les GPIO de l'ESP32 sont en 3V et le MPPT en 5V** en plus d'isoler l'ADUM1201 effectue la conversion des signaux 5V-3V
 
 ![testmat](img/testmat.jpg)
+
+
+
+## Objets signalK envoyés :
+
+
+
+| Objet signalK                               | Unité | Description                 | Source      |
+| ------------------------------------------- | ----- | --------------------------- | ----------- |
+| electrical.battery.1.voltage                | V     | Batterie voltage            | MPPT        |
+| electrical.solar.1.Current                  | mA    | Chargeur courant            | MPPT        |
+| electrical.solar.1.panelCurrent             | mA    | Panneau courant             | MPPT        |
+| electrical.solar.1.panelVoltage             | V     | Panneau Voltage             | MPPT        |
+| electrical.solar.1.panelPower               | W     | Panneau puissance           | MPPT        |
+| electrical.solar.1.yieldToday               | Wh    | Panneau Wh jour             | MPPT        |
+| electrical.solar.1.maxPowerToday            | W     | Panneau max puissance       | MPPT        |
+| electrical.solar.1.chargingMode             |       | Mode de charge              | MPPT        |
+| electrical.battery.1.current                | A     | Batterie courant            | INA         |
+| electrical.battery.1.capacity.remaining     | Ah    | Batterie capacitée restante | INA + Peurk |
+| electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacité        |             |
+
+
+
+A faire :
+
+- [ ] #### [/vessels//electrical/batteries//temperature](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexptemperature)
+
+- [ ] [/vessels//electrical/batteries//capacity/nominal](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitynominal)
+
+  
+
+- [ ] [/vessels//electrical/batteries//capacity/dischargeLimit](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargelimit)
+
+  
+
+- [ ] [/vessels//electrical/batteries//capacity/dischargeSinceFull](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargesincefull)
+
+- [ ] [/vessels//electrical/batteries//capacity/timeRemaining](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitytimeremaining)

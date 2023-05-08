@@ -260,7 +260,7 @@ bat_cap->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROL
 
 auto* bat_pour = new RepeatSensor<float>(500, read_pourCharge_callback);
 bat_pour->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.stateOfCharge", new SKMetadata("%",                     
-                   "Pourcentage capacité")));
+                   "Pourcentage capacitée")));
 
 // fonction sensESP
   sensesp_app->start();

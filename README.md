@@ -37,7 +37,7 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 | electrical.solar.1.chargingMode             |       | Mode de charge              | MPPT        |
 | electrical.battery.1.current                | A     | Batterie courant            | INA         |
 | electrical.battery.1.capacity.remaining     | Ah    | Batterie capacitée restante | INA + Peurk |
-| electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacité        |             |
+| electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacitée       |             |
 
 
 
@@ -47,11 +47,7 @@ A faire :
 
 - [ ] [/vessels//electrical/batteries//capacity/nominal](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitynominal)
 
-  
-
 - [ ] [/vessels//electrical/batteries//capacity/dischargeLimit](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargelimit)
-
-  
 
 - [ ] [/vessels//electrical/batteries//capacity/dischargeSinceFull](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargesincefull)
 

@@ -28,14 +28,14 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 | Objet signalK                               | Unité | Description                 | Source      |
 | ------------------------------------------- | ----- | --------------------------- | ----------- |
 | electrical.battery.1.voltage                | V     | Batterie voltage            | MPPT        |
-| electrical.solar.1.Current                  | mA    | Chargeur courant            | MPPT        |
+| electrical.solar.1.current                  | mA    | Chargeur courant            | MPPT        |
 | electrical.solar.1.panelCurrent             | mA    | Panneau courant             | MPPT        |
 | electrical.solar.1.panelVoltage             | V     | Panneau Voltage             | MPPT        |
 | electrical.solar.1.panelPower               | W     | Panneau puissance           | MPPT        |
 | electrical.solar.1.yieldToday               | Wh    | Panneau Wh jour             | MPPT        |
 | electrical.solar.1.maxPowerToday            | W     | Panneau max puissance       | MPPT        |
 | electrical.solar.1.chargingMode             |       | Mode de charge              | MPPT        |
-| electrical.battery.1.Current                | A     | Batterie courant            | INA         |
+| electrical.battery.1.current                | A     | Batterie courant            | INA         |
 | electrical.battery.1.capacity.remaining     | Ah    | Batterie capacitée restante | INA + Peurk |
 | electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacitée       |             |
 

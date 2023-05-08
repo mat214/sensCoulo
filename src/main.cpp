@@ -214,33 +214,25 @@ void setup() {
   // Flux VEDirect MPTT
   VEDirectInput* vedi = new VEDirectInput(&Serial1);
   vedi->parser.data.channel_1_battery_voltage.connect_to(new SKOutputFloat(
-      "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage",
-      "/Signal K/battery " SOLAR_CHARGE_CONTROLLER_ID " Voltage", new SKMetadata("V",                     
+      "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V",                     
                    "Batterie voltage")));
   vedi->parser.data.channel_1_battery_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".Current",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID ".Current", new SKMetadata("mA",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("mA",                     
                    "Chargeur courant")));
   vedi->parser.data.load_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent", new SKMetadata("mA",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent", new SKMetadata("mA",                     
                    "Panneau courant")));
   vedi->parser.data.panel_voltage.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelVoltage",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID " Panel Voltage", new SKMetadata("V",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelVoltage", new SKMetadata("V",                     
                    "Panneau voltage")));
   vedi->parser.data.panel_power.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelPower",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID " Panel Power", new SKMetadata("V",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelPower", new SKMetadata("V",                     
                    "Panneau puissance")));
   vedi->parser.data.yield_today.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".yieldToday",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID " Yield Today", new SKMetadata("Wh",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".yieldToday", new SKMetadata("Wh",                     
                    "Panneau Wh jour")));
   vedi->parser.data.maximum_power_today.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday",
-      "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID
-      " Max Power Today", new SKMetadata("W", "Panneau max puissance")));
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday", new SKMetadata("W", "Panneau max puissance")));
 
 // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
 auto Etat_int_to_string = new LambdaTransform<int, String>(Etat_text);
@@ -251,7 +243,7 @@ vedi->parser.data.state_of_operation.connect_to(Etat_int_to_string)->connect_to(
 
 // Sensor lié à la meusure INA
 auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
-bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".Current", new SKMetadata("A",                     
+bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A",                     
                    "Batterie courant")));
 
 auto* bat_cap = new RepeatSensor<float>(500, read_cap_callback);

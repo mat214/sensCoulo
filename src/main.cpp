@@ -2,15 +2,13 @@
 //
 // Matthias Perez matthias.perez@posteo.net
 
-#include "sensesp/sensors/analog_input.h"
-#include "sensesp/sensors/digital_input.h"
+
 #include "sensesp/sensors/sensor.h"
 #include "sensesp/signalk/signalk_output.h"
-#include "sensesp/system/lambda_consumer.h"
 #include "sensesp/transforms/lambda_transform.h"
 #include "sensesp_app_builder.h"
 #include "sevedirect/sensors/vedirect.h"
-#include "sensesp/transforms/repeat_report.h"
+
 
 // NOTE: IMPORTANT! Victron MPPT chargers use a 5V VE.Direct interface, so
 // a logic level converter or a voltage divider MUST be used to interface the
@@ -193,7 +191,7 @@ void setup() {
   // Configure INA226
   ina.configure(INA226_AVERAGES_1, INA226_BUS_CONV_TIME_1100US, INA226_SHUNT_CONV_TIME_1100US, INA226_MODE_SHUNT_BUS_CONT);
 
-  // Calibrate INA226. Rshunt = 0.002 ohm, Max excepted current = 30A ( A modifier en fonction du shunt)
+  // Calibrate INA226. Rshunt = 0.0025 ohm, Max excepted current = 30A ( A modifier en fonction du shunt)
   ina.calibrate(0.0025, 30);
 
   // Display configuration

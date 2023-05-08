@@ -226,7 +226,7 @@ void setup() {
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelVoltage", new SKMetadata("V",                     
                    "Panneau voltage")));
   vedi->parser.data.panel_power.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelPower", new SKMetadata("V",                     
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelPower", new SKMetadata("W",                     
                    "Panneau puissance")));
   vedi->parser.data.yield_today.connect_to(new SKOutputFloat(
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".yieldToday", new SKMetadata("Wh",                     

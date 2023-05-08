@@ -19,4 +19,4 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 - INA226 : il faudra dessouder la résistance shunt intégrée au module pour utiliser le module avec le shunt extérieur.
 - ADUM1201 : isolateur magnétique pour isoler la connexion série entre l'ESP32 et le MPPTvictron. **Attention les GPIO de l'ESP32 sont en 3V et le MPPT en 5V** en plus d'isoler l'ADUM1201 effectue la conversion des signaux 5V-3V
 
-![testmat](img\testmat.jpg)
+![testmat](img/testmat.jpg)

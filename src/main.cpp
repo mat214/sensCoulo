@@ -251,7 +251,7 @@ vedi->parser.data.state_of_operation.connect_to(Etat_int_to_string)->connect_to(
 
 // Sensor lié à la meusure INA
 auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
-bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A",                     
+bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".Current", new SKMetadata("A",                     
                    "Batterie courant")));
 
 auto* bat_cap = new RepeatSensor<float>(500, read_cap_callback);

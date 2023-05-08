@@ -35,7 +35,7 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 | electrical.solar.1.yieldToday               | Wh    | Panneau Wh jour             | MPPT        |
 | electrical.solar.1.maxPowerToday            | W     | Panneau max puissance       | MPPT        |
 | electrical.solar.1.chargingMode             |       | Mode de charge              | MPPT        |
-| electrical.battery.1.current                | A     | Batterie courant            | INA         |
+| electrical.battery.1.Current                | A     | Batterie courant            | INA         |
 | electrical.battery.1.capacity.remaining     | Ah    | Batterie capacitée restante | INA + Peurk |
 | electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacitée       |             |
 

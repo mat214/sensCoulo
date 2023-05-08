@@ -17,18 +17,21 @@
 #include <Wire.h>
 #include <INA226.h>
 
-const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
-INA226 ina(Wire);
 
+// constante configurable
+const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
 constexpr int kTXPin = 13; // Pin TX de l'INA
 constexpr int kRXPin = 12; // Pin RX de l'INA
-
 const int CapNomi = 70; // capacité batterie à renseigner en Ah
 double Cap = CapNomi;
-float PourCharge = 100;
 const float ChargeEfficiencyFactor = 0.9; // efficience de charge 
 const float Coef = 1.24; // coef de Peukert
+
+//variable global
+float PourCharge = 100;
 String EtatCharge;
+double courant;
+INA226 ina(Wire);
 
 // Provide an ID for the charge controller, to be used in the Signal K
 // and the configuration paths
@@ -50,19 +53,25 @@ float read_pourCharge_callback() {
 
 // fonction amp callback avec lancement calcul charge décharge
 float read_amp_callback() {
-  double a = ina.readShuntCurrent();
+  courant = ina.readShuntCurrent();
   if (EtatCharge != "Float") {
-    a = -a;
+    courant = -courant;
     double t = t_callback / 3600000;
-    if (a > 0) {    
-        Cap = Cap + (a * ChargeEfficiencyFactor / 36000);
+    if (courant > 0) {    
+        Cap = Cap + (courant * ChargeEfficiencyFactor / 36000);
     } else {    
-        Cap = Cap - (pow(-a,Coef) / 36000);
+        Cap = Cap - (pow(-courant,Coef) / 36000);
     }
     PourCharge = Cap / CapNomi * 100; 
   }
-  return (a); 
+  return (courant); 
   }
+
+// courant consomation circuit
+auto lambada_courant_circuit = [](float i) ->float {
+i = i * 1000 - courant;
+return (i); 
+};
 
 // traduction int soc en string et initialisation au float
 auto Etat_text = [](int soc) ->String {
@@ -235,11 +244,14 @@ void setup() {
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday", new SKMetadata("W", "Panneau max puissance")));
 
 // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
-auto Etat_int_to_string = new LambdaTransform<int, String>(Etat_text);
- 
-vedi->parser.data.state_of_operation.connect_to(Etat_int_to_string)->connect_to(new SKOutputString(
+vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))->connect_to(new SKOutputString(
 "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode",
 "/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID " chargingMode", new SKMetadata("", "Mode de charge")));
+
+// LambaTransform courant circuit courant chargeur  - courant baterie
+vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))->connect_to(new SKOutputFloat(
+      "electrical.current", new SKMetadata("A",                     
+                   "Circuit courant")));
 
 // Sensor lié à la meusure INA
 auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);

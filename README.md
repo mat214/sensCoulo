@@ -1,8 +1,6 @@
 # SensCoulo
  signalk coulomètre ESP32
 
-Translation [English](README.en.md)
-
 SensCoulo est un projet de moniteur de batterie 12V pour serveur signalk à partir d'un ESP32. Il fonctionne avec un régulateur solaire MPPT victron avec lequel l'ESP32 communique en liaison série à l'aide [du protocole Ve.direct.](https://www.victronenergy.com/upload/documents/VE.Direct-Protocol-3.32.pdf) 
 
 L'ESP32 renvoie les données issues du MPPT au serveur signalK et initialise la charge compléte de la batterie quand le MPPT est en float.

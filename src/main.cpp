@@ -8,6 +8,7 @@
 #include "sensesp/transforms/lambda_transform.h"
 #include "sensesp_app_builder.h"
 #include "sevedirect/sensors/vedirect.h"
+#include "sensesp\system\configurable.h"
 
 
 // NOTE: IMPORTANT! Victron MPPT chargers use a 5V VE.Direct interface, so
@@ -18,19 +19,25 @@
 #include <INA226.h>
 
 
-// constante configurable
+// *******************       constante configurable       ***************************
+
+
 const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
 constexpr int kTXPin = 13; // Pin TX de l'INA
 constexpr int kRXPin = 12; // Pin RX de l'INA
-const int CapNomi = 70; // capacité batterie à renseigner en Ah
-double Cap = CapNomi;
+const int CapaNominal = 70; // capacité batterie à renseigner en Ah ici ou dans le WebUI
 const float ChargeEfficiencyFactor = 0.9; // efficience de charge 
 const float Coef = 1.24; // coef de Peukert
 
+const ParamInfo* param_data = new ParamInfo[1]{
+      {"Nomi", "Capacité nominal baterie"}         
+};
+
 //variable global
+bool premierDemarage = true;
 float PourCharge = 100;
 String EtatCharge;
-double courant;
+double Cap;
 INA226 ina(Wire);
 
 // Provide an ID for the charge controller, to be used in the Signal K
@@ -42,39 +49,43 @@ using namespace sensesp;
 reactesp::ReactESP app;
 
 // fonction callback de retour de la capacité
-float read_cap_callback() {
-  return(Cap);
-}
 
 // fonction callback de retour le % de charge
 float read_pourCharge_callback() {
   return(PourCharge);
 }
 
-// fonction amp callback avec lancement calcul charge décharge
+// fonction amp callback avec 
 float read_amp_callback() {
-  courant = ina.readShuntCurrent();
-  if (EtatCharge != "Float") {
-    courant = -courant;
-    double t = t_callback / 3600000;
-    if (courant > 0) {    
-        Cap = Cap + (courant * ChargeEfficiencyFactor / 36000);
-    } else {    
-        Cap = Cap - (pow(-courant,Coef) / 36000);
+  return (- ina.readShuntCurrent()); 
+}
+// fonction lambda lancement calcul charge décharge
+auto amp_to_cap_function = [](float courant, int Nomi) ->float {
+     if (premierDemarage) {
+        Cap = Nomi;
+        premierDemarage = false;
+     }
+     if (EtatCharge != "Float") {
+        double t = t_callback / 3600000;
+        if (courant > 0) {    
+            Cap = Cap + (courant * ChargeEfficiencyFactor / 36000);
+        } else {    
+            Cap = Cap - (pow(-courant,Coef) / 36000);
+        }
+        PourCharge = Cap / Nomi * 100;  
     }
-    PourCharge = Cap / CapNomi * 100; 
-  }
-  return (courant); 
-  }
+return (Cap);
+};
 
+//********** bug a vérifier donnée incohérente !!!!! ***************
 // courant consomation circuit
 auto lambada_courant_circuit = [](float i) ->float {
-i = i * 1000 - courant;
+i = i * 1000 + ina.readShuntCurrent();
 return (i); 
 };
 
 // traduction int soc en string et initialisation au float
-auto Etat_text = [](int soc) ->String {
+auto Etat_text = [](int soc, int Nomi) ->String {
     
     switch( soc ) {
               case 0:
@@ -84,7 +95,7 @@ auto Etat_text = [](int soc) ->String {
               case 3:
                   return EtatCharge ="Bulk";
               case 5:
-                  Cap = CapNomi;
+                 // Cap = CapNomi;
                   return EtatCharge = "Float";
               case 6:
                   return EtatCharge = "Equalize  (manual)";
@@ -244,9 +255,8 @@ void setup() {
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday", new SKMetadata("W", "Panneau max puissance")));
 
 // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
-vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))->connect_to(new SKOutputString(
-"electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode",
-"/Signal K/Solar Charger " SOLAR_CHARGE_CONTROLLER_ID " chargingMode", new SKMetadata("", "Mode de charge")));
+vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text, CapaNominal, param_data,"/configuration/CapaNomi"))->connect_to(new SKOutputString(
+"electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode", new SKMetadata("", "Mode de charge")));
 
 // LambaTransform courant circuit courant chargeur  - courant baterie
 vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))->connect_to(new SKOutputFloat(
@@ -258,8 +268,8 @@ auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
 bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A",                     
                    "Batterie courant")));
 
-auto* bat_cap = new RepeatSensor<float>(500, read_cap_callback);
-bat_cap->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.remaining", new SKMetadata("Ah",                     
+
+bat_current->connect_to(new LambdaTransform<float, float,int>(amp_to_cap_function, CapaNominal, param_data,"/configuration/CapaNomi"))->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.remaining", new SKMetadata("Ah",                     
                    "Batterie capacitée restante")));
 
 auto* bat_pour = new RepeatSensor<float>(500, read_pourCharge_callback);

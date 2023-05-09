@@ -80,8 +80,8 @@ return (Cap);
 //********** bug a vérifier donnée incohérente !!!!! ***************
 // courant consomation circuit
 auto lambada_courant_circuit = [](float i) ->float {
-i = i * 1000 + ina.readShuntCurrent();
-return (i); 
+i = (- i * 1000) - ina.readShuntCurrent();
+return (i);
 };
 
 // traduction int soc en string et initialisation au float

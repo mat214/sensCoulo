@@ -19,24 +19,24 @@
 #include <INA226.h>
 
 
-// *******************       constante configurable       ***************************
+// *******************       constante et variable configurable       ***************************
 
 
 const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
 constexpr int kTXPin = 13; // Pin TX de l'INA
 constexpr int kRXPin = 12; // Pin RX de l'INA
-const int CapaNominal = 70; // capacité batterie à renseigner en Ah ici ou dans le WebUI
-const float ChargeEfficiencyFactor = 0.9; // efficience de charge 
-const float Coef = 1.24; // coef de Peukert
+int CapaNominal = 70; // capacité batterie à renseigner en Ah ici ou dans le WebUI
+const float ChargeEfficiencyFactor = 0.9; // Efficience de charge en % ou dans le WebUI
+const float Coef = 1.24; // coef de Peukert ou dans le WebUI
 
-const ParamInfo* param_data = new ParamInfo[1]{
-      {"Nomi", "Capacité nominal baterie"}
+// param info web UI
+const ParamInfo* param_data = new ParamInfo[3]{
+      {"Nomi", "Capacité nominal baterie"},
+      {"CoefP", "coef de Peukert"},
+      {"CEF", "Efficience de charge en %"}
 
 };
-const ParamInfo* param_data_Coef = new ParamInfo[1]{
-      {"CoefP", "coef de Peukert"}
 
-};
 
 //variable global
 bool premierDemarage = true;
@@ -65,7 +65,8 @@ float read_amp_callback() {
   return (- ina.readShuntCurrent()); 
 }
 // fonction lambda lancement calcul charge décharge
-auto amp_to_cap_function = [](float courant, int Nomi, float CoefP) ->float {
+auto amp_to_cap_function = [](float courant, int Nomi, float CoefP, int CEF) ->float {
+     if (Nomi != CapaNominal) {CapaNominal = Nomi;}
      if (premierDemarage) {
         Cap = Nomi;
         premierDemarage = false;
@@ -90,7 +91,7 @@ return (i);
 };
 
 // traduction int soc en string et initialisation au float
-auto Etat_text = [](int soc, int Nomi) ->String {
+auto Etat_text = [](int soc) ->String {
     
     switch( soc ) {
               case 0:
@@ -100,7 +101,7 @@ auto Etat_text = [](int soc, int Nomi) ->String {
               case 3:
                   return EtatCharge ="Bulk";
               case 5:
-                  Cap = Nomi;
+                  Cap = CapaNominal;
                   return EtatCharge = "Float";
               case 6:
                   return EtatCharge = "Equalize  (manual)";
@@ -259,34 +260,30 @@ void setup() {
   vedi->parser.data.maximum_power_today.connect_to(new SKOutputFloat(
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday", new SKMetadata("W", "Panneau max puissance")));
 
-// LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
-vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String, int>(Etat_text, CapaNominal, param_data, "/configuration/CapaNomi"))->connect_to(new SKOutputString(
-"electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode", new SKMetadata("", "Mode de charge")));
+  // LambaTransform courant circuit courant chargeur  - courant baterie
+  vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))->connect_to(new SKOutputFloat(
+        "electrical.current", new SKMetadata("A",                     
+                    "Circuit courant")));
 
-// LambaTransform courant circuit courant chargeur  - courant baterie
-vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))->connect_to(new SKOutputFloat(
-      "electrical.current", new SKMetadata("A",                     
-                   "Circuit courant")));
+  // Sensor lié à la meusure INA
+  auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
 
-// Sensor lié à la meusure INA
-auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
-bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A",                     
-                   "Batterie courant")));
+  bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A",                     
+                    "Batterie courant")));
 
+  bat_current->connect_to(new LambdaTransform<float, float, int, float, int>(amp_to_cap_function, CapaNominal, Coef, ChargeEfficiencyFactor, param_data,"/batterie"))->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.remaining", new SKMetadata("Ah",                     
+                    "Batterie capacitée restante")));
 
-bat_current->connect_to(new LambdaTransform<float, float, int, float>(amp_to_cap_function, CapaNominal, param_data,"/configuration/CapaNomi", Coef, param_data_Coef, "/configuration/Coef"))->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.remaining", new SKMetadata("Ah",                     
-                   "Batterie capacitée restante")));
+  auto* bat_pour = new RepeatSensor<float>(1000, read_pourCharge_callback);
+  bat_pour->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.stateOfCharge", new SKMetadata("%",                     
+                    "Pourcentage capacitée")));
 
-auto* bat_pour = new RepeatSensor<float>(500, read_pourCharge_callback);
-bat_pour->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.stateOfCharge", new SKMetadata("%",                     
-                   "Pourcentage capacitée")));
+  // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
+  vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))->connect_to(new SKOutputString(
+  "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode", new SKMetadata("", "Mode de charge")));
 
-// fonction sensESP
-
-
-
-  sensesp_app->start();
-  
+  // fonction sensESP
+  sensesp_app->start(); 
 }
 
 // loop lié à sensESP

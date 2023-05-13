@@ -29,8 +29,10 @@ constexpr int kRXPin = 12; // Pin RX de l'INA
 IntConfig *CapaNominal;// Capacité batterie à renseigner en Ah ici ou dans le WebUI
 FloatConfig *ChargeEfficiencyFactor;// Efficience de charge en % ou dans le WebUI
 FloatConfig *Coef;//  coef de Peukert ou dans le WebUI
+IntConfig *CT; //temps décharge
 
 //variable global
+int CapNomiPeuk;
 bool premierDemarage = true;
 float PourCharge = 100;
 String EtatCharge;
@@ -60,7 +62,7 @@ float read_amp_callback() {
 auto amp_to_cap_function = [](float courant) ->float {
      
      if (premierDemarage) {
-        Cap = CapaNominal->get_value();
+        Cap = CapNomiPeuk;
         premierDemarage = false;
      }
      if (EtatCharge != "Float") {
@@ -70,7 +72,7 @@ auto amp_to_cap_function = [](float courant) ->float {
         } else {    
             Cap = Cap - (pow(-courant,Coef->get_value()) / t);
         }
-        PourCharge = Cap / CapaNominal->get_value() * 100;  
+        PourCharge = Cap / CapNomiPeuk * 100;  
     }
 return (Cap);
 };
@@ -93,7 +95,7 @@ auto Etat_text = [](int soc) ->String {
               case 3:
                   return EtatCharge ="Bulk";
               case 5:
-                  Cap = CapaNominal->get_value();
+                  Cap = CapNomiPeuk;
                   return EtatCharge = "Float";
               case 6:
                   return EtatCharge = "Equalize  (manual)";
@@ -232,6 +234,11 @@ void setup() {
 CapaNominal = new IntConfig(70, "/Configuration/Capacité Batérie", "en Ah", 100);
 Coef = new FloatConfig(1.24, "/Configuration/Coef de Peukert","", 100);
 ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charge","en %", 100);
+CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 100);
+CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(Coef->get_value())));
+
+
+
   // initialize Serial1 INA on the opto_in pin
   Serial1.begin(19200, SERIAL_8N1, kRXPin, kTXPin, false);
 
@@ -254,7 +261,7 @@ ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charg
 
   // LambaTransform courant circuit courant chargeur  - courant baterie
   vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))
-    ->connect_to(new SKOutputFloat("Circuit courant"));
+    ->connect_to(new SKOutputFloat("electrical.circuit." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A", "Circuit courant")));
 
   // Sensor lié à la meusure INA
   auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);

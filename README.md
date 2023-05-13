@@ -27,6 +27,7 @@ SensCoulo se configure à partir de l'interface utilisateur : https://signalk.or
 
 Paramètres à configurer dans UI :
 
+- Temps de décharge donnée constructeur (100, 20, 10, 5)
 - Capacité Batterie en Ah
 - Coefficient de Peukert (valeur moyenne de 1.24 pour une batterie plomb/AGM)
 - Efficience de charge de la batterie en % (valeur moyenne de 90% pour une batterie neuve)

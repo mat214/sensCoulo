@@ -21,6 +21,18 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 
 
 
+## Configuration
+
+SensCoulo se configure à partir de l'interface utilisateur : https://signalk.org/SensESP/pages/user_interface/
+
+Paramètres à configurer dans UI :
+
+- Capacité Batterie en Ah
+- Coefficient de Peukert (valeur moyenne de 1.24 pour une batterie plomb/AGM)
+- Efficience de charge de la batterie en % (valeur moyenne de 90% pour une batterie neuve)
+
+
+
 ## Objets signalK envoyés :
 
 

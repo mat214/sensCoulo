@@ -8,7 +8,8 @@
 #include "sensesp/transforms/lambda_transform.h"
 #include "sensesp_app_builder.h"
 #include "sevedirect/sensors/vedirect.h"
-#include "sensesp\system\configurable.h"
+// #include "sensesp\system\configurable.h"
+#include "ui_configurables.h"
 
 
 // NOTE: IMPORTANT! Victron MPPT chargers use a 5V VE.Direct interface, so
@@ -19,24 +20,15 @@
 #include <INA226.h>
 
 
-// *******************       constante et variable configurable       ***************************
-
-
+// constante
 const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
 constexpr int kTXPin = 13; // Pin TX de l'INA
 constexpr int kRXPin = 12; // Pin RX de l'INA
-int CapaNominal = 70; // capacité batterie à renseigner en Ah ici ou dans le WebUI
-const float ChargeEfficiencyFactor = 0.9; // Efficience de charge en % ou dans le WebUI
-const float Coef = 1.24; // coef de Peukert ou dans le WebUI
 
-// param info web UI
-const ParamInfo* param_data = new ParamInfo[3]{
-      {"Nomi", "Capacité nominal baterie"},
-      {"CoefP", "coef de Peukert"},
-      {"CEF", "Efficience de charge en %"}
-
-};
-
+// variable configurable
+IntConfig *CapaNominal;// Capacité batterie à renseigner en Ah ici ou dans le WebUI
+FloatConfig *ChargeEfficiencyFactor;// Efficience de charge en % ou dans le WebUI
+FloatConfig *Coef;//  coef de Peukert ou dans le WebUI
 
 //variable global
 bool premierDemarage = true;
@@ -65,20 +57,20 @@ float read_amp_callback() {
   return (- ina.readShuntCurrent()); 
 }
 // fonction lambda lancement calcul charge décharge
-auto amp_to_cap_function = [](float courant, int Nomi, float CoefP, int CEF) ->float {
-     if (Nomi != CapaNominal) {CapaNominal = Nomi;}
+auto amp_to_cap_function = [](float courant) ->float {
+     
      if (premierDemarage) {
-        Cap = Nomi;
+        Cap = CapaNominal->get_value();
         premierDemarage = false;
      }
      if (EtatCharge != "Float") {
         float t = 3600000 / t_callback;
         if (courant > 0) {    
-            Cap = Cap + (courant * ChargeEfficiencyFactor / t);
+            Cap = Cap + (courant * (ChargeEfficiencyFactor->get_value() / 100) / t);
         } else {    
-            Cap = Cap - (pow(-courant,Coef) / t);
+            Cap = Cap - (pow(-courant,Coef->get_value()) / t);
         }
-        PourCharge = Cap / Nomi * 100;  
+        PourCharge = Cap / CapaNominal->get_value() * 100;  
     }
 return (Cap);
 };
@@ -101,7 +93,7 @@ auto Etat_text = [](int soc) ->String {
               case 3:
                   return EtatCharge ="Bulk";
               case 5:
-                  Cap = CapaNominal;
+                  Cap = CapaNominal->get_value();
                   return EtatCharge = "Float";
               case 6:
                   return EtatCharge = "Equalize  (manual)";
@@ -199,6 +191,7 @@ void setup() {
   SetupSerialDebug(115200);
 #endif
 
+
  Serial.println("Initialize INA226");
   Serial.println("-----------------------------------------------");
 
@@ -233,7 +226,12 @@ void setup() {
                     // OTA obligatoire car impossible en serie avec l'optocoupleur bug ...
                     ->enable_ota("password")
                     ->get_app();
+  
+  // variable configurable  UI batterie
 
+CapaNominal = new IntConfig(70, "/Configuration/Capacité Batérie", "en Ah", 100);
+Coef = new FloatConfig(1.24, "/Configuration/Coef de Peukert","", 100);
+ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charge","en %", 100);
   // initialize Serial1 INA on the opto_in pin
   Serial1.begin(19200, SERIAL_8N1, kRXPin, kTXPin, false);
 
@@ -263,7 +261,7 @@ void setup() {
 
   bat_current->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A", "Batterie courant")));
 
-  bat_current->connect_to(new LambdaTransform<float, float, int, float, int>(amp_to_cap_function, CapaNominal, Coef, ChargeEfficiencyFactor, param_data,"/batterie"))
+  bat_current->connect_to(new LambdaTransform<float, float>(amp_to_cap_function))
      ->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.remaining", new SKMetadata("Ah", "Batterie capacitée restante")));
 
   auto* bat_pour = new RepeatSensor<float>(1000, read_pourCharge_callback);

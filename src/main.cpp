@@ -235,6 +235,8 @@ CapaNominal = new IntConfig(70, "/Configuration/Capacité Batérie", "en Ah", 10
 Coef = new FloatConfig(1.24, "/Configuration/Coef de Peukert","", 100);
 ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charge","en %", 100);
 CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 100);
+
+// définition de la capacité de Peukert
 CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(Coef->get_value())));
 
 

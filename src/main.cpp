@@ -11,6 +11,14 @@
 // #include "sensesp\system\configurable.h"
 #include "ui_configurables.h"
 
+// onewire température
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 15
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+
 
 // NOTE: IMPORTANT! Victron MPPT chargers use a 5V VE.Direct interface, so
 // a logic level converter or a voltage divider MUST be used to interface the
@@ -22,8 +30,8 @@
 
 // constante
 const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
-constexpr int kTXPin = 13; // Pin TX de l'INA
-constexpr int kRXPin = 12; // Pin RX de l'INA
+constexpr int kTXPin = 13; // Pin TX de Vedirect
+constexpr int kRXPin = 27; // Pin RX de VeDirect
 
 // variable configurable
 IntConfig *CapaNominal;// Capacité batterie à renseigner en Ah ici ou dans le WebUI
@@ -46,6 +54,13 @@ INA226 ina(Wire);
 using namespace sensesp;
 
 reactesp::ReactESP app;
+
+//fonction retour température
+float requestTemperatures_callback() {
+  sensors.requestTemperatures();
+  float temperatureC = sensors.getTempCByIndex(0);
+  return temperatureC;
+}
 
 // fonction callback de retour de la capacité
 
@@ -220,6 +235,9 @@ void setup() {
 
   Serial.println("-----------------------------------------------");
 
+  // fonction setup température
+  sensors.begin();
+
   // Construct the global SensESPApp() object
   SensESPAppBuilder builder;
   sensesp_app = (&builder)
@@ -241,7 +259,7 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
 
 
 
-  // initialize Serial1 INA on the opto_in pin
+  // initialize Serial1 Vedirect on the opto_in pin
   Serial1.begin(19200, SERIAL_8N1, kRXPin, kTXPin, false);
 
   // Flux VEDirect MPTT
@@ -279,6 +297,11 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
   // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
   vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))
       ->connect_to(new SKOutputString("electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode", new SKMetadata("", "Mode de charge")));
+
+
+  // sensor température
+   auto* bat_temp = new RepeatSensor<float>(t_callback, requestTemperatures_callback);
+   bat_temp->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".temperature", new SKMetadata("C", "batterie température")));
 
   // fonction sensESP
   sensesp_app->start(); 

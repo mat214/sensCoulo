@@ -16,6 +16,7 @@ Le projet est construit à partir du framework [sensESP](https://github.com/Sign
 - Shunt : pour le projet est utilisé un shunt 75mv 30A [CG FL2C](http://www.cnchog.com/products/10a-50a-ID137.html)
 - INA226 : il faudra dessouder la résistance shunt intégrée au module pour utiliser le module avec le shunt extérieur.
 - ADUM1201 : isolateur magnétique pour isoler la connexion série entre l'ESP32 et le MPPTvictron. **Attention les GPIO de l'ESP32 sont en 3V et le MPPT en 5V** en plus d'isoler l'ADUM1201 effectue la conversion des signaux 5V-3V
+-  DS18B20 : capteur température One Wire 
 
 ![testmat](img/testmat.jpg)
 
@@ -52,12 +53,14 @@ Paramètres à configurer dans UI :
 | electrical.battery.1.capacity.remaining     | Ah    | Batterie capacitée restante | INA + Peurk                                               |
 | electrical.battery.1.capacity.stateOfCharge | %     | Pourcentage capacitée       |                                                           |
 | electrical.current                          | A     | Circuit courant             | electrical.solar.1.current - electrical.battery.1.current |
+| electrical.battery.1.temperature            | C     | Température batterie        | DS18B20                                                   |
 
 
 
 A faire :
 
-- [ ] [/vessels//electrical/batteries//temperature](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexptemperature)
+
+
 - [ ] [/vessels//electrical/batteries//capacity/dischargeLimit](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargelimit)
 - [ ] [/vessels//electrical/batteries//capacity/dischargeSinceFull](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitydischargesincefull)
 - [ ] [/vessels//electrical/batteries//capacity/timeRemaining](https://signalk.org/specification/1.7.0/doc/vesselsBranch.html#vesselsregexpelectricalbatteriesregexpcapacitytimeremaining)

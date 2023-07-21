@@ -94,7 +94,7 @@ auto amp_to_cap_function = [](float courant) ->float {
         premierDemarage = false;
      }
      
-        float t = 3600000 / t_callback;
+        float t = 3600000.0 / t_callback;
         if (courant > 0) {    
             Cap = Cap + (courant * (ChargeEfficiencyFactor->get_value() / 100) / t);
         } else {

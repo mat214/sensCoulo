@@ -2,6 +2,7 @@
 //
 // Matthias Perez matthias.perez@posteo.net
 
+#include "math.h"
 
 #include "sensesp/sensors/sensor.h"
 #include "sensesp/signalk/signalk_output.h"
@@ -45,6 +46,7 @@ bool premierDemarage = true;
 float PourCharge = 100;
 String EtatCharge;
 double Cap;
+float v = 12;
 INA226 ina(Wire);
 
 // Provide an ID for the charge controller, to be used in the Signal K
@@ -71,8 +73,19 @@ float read_pourCharge_callback() {
 
 // fonction amp callback avec 
 float read_amp_callback() {
-  return (- ina.readShuntCurrent()); 
+  return (ina.readShuntCurrent()); 
 }
+
+float read_volt_callback() {
+float Vi = v;
+v = ina.readBusVoltage();
+if ((Vi > 14,75) and (v > 13,75) and (v < 13,85)) {
+Cap = CapNomiPeuk;  
+} 
+return v;
+}
+
+
 // fonction lambda lancement calcul charge décharge
 auto amp_to_cap_function = [](float courant) ->float {
      
@@ -80,22 +93,24 @@ auto amp_to_cap_function = [](float courant) ->float {
         Cap = CapNomiPeuk;
         premierDemarage = false;
      }
-     if (EtatCharge != "Float") {
+     
         float t = 3600000 / t_callback;
         if (courant > 0) {    
             Cap = Cap + (courant * (ChargeEfficiencyFactor->get_value() / 100) / t);
-        } else {    
-            Cap = Cap - (pow(-courant,Coef->get_value()) / t);
+        } else {
+            float c = - courant;
+            Cap = Cap - (pow(c, Coef->get_value()) / t);
         }
+      if (Cap > CapNomiPeuk) {Cap = CapNomiPeuk;}
         PourCharge = Cap / CapNomiPeuk * 100;  
-    }
+    
 return (Cap);
 };
 
 //********** bug a vérifier donnée incohérente !!!!! ***************
 // courant consomation circuit
 auto lambada_courant_circuit = [](float i) ->float {
-i = (- i * 1000) - ina.readShuntCurrent();
+i = (- i ) - ina.readShuntCurrent();
 return (i);
 };
 
@@ -109,6 +124,8 @@ auto Etat_text = [](int soc) ->String {
                 return EtatCharge ="Fault";
               case 3:
                   return EtatCharge ="Bulk";
+              case 4:
+                  return EtatCharge ="Absorption";
               case 5:
                   Cap = CapNomiPeuk;
                   return EtatCharge = "Float";
@@ -252,7 +269,7 @@ void setup() {
 CapaNominal = new IntConfig(70, "/Configuration/Capacité Batérie", "en Ah", 100);
 Coef = new FloatConfig(1.24, "/Configuration/Coef de Peukert","", 100);
 ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charge","en %", 100);
-CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 100);
+CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 20);
 
 // définition de la capacité de Peukert
 CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(Coef->get_value())));
@@ -264,12 +281,12 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
 
   // Flux VEDirect MPTT
   VEDirectInput* vedi = new VEDirectInput(&Serial1);
-  vedi->parser.data.channel_1_battery_voltage.connect_to(new SKOutputFloat(
-      "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V", "Batterie voltage")));
+ // vedi->parser.data.channel_1_battery_voltage.connect_to(new SKOutputFloat(
+ //     "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V", "Batterie voltage")));
   vedi->parser.data.channel_1_battery_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("mA", "Chargeur courant")));
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A", "Chargeur courant")));
   vedi->parser.data.load_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent", new SKMetadata("mA", "Panneau courant")));
+      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent", new SKMetadata("A", "Panneau courant")));
   vedi->parser.data.panel_voltage.connect_to(new SKOutputFloat(
       "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelVoltage", new SKMetadata("V", "Panneau voltage")));
   vedi->parser.data.panel_power.connect_to(new SKOutputFloat(
@@ -293,6 +310,14 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
 
   auto* bat_pour = new RepeatSensor<float>(1000, read_pourCharge_callback);
   bat_pour->connect_to(new SKOutputFloat("electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".capacity.stateOfCharge", new SKMetadata("%", "Pourcentage capacitée")));
+
+  auto* Bat_volt = new RepeatSensor<float>(2000, read_volt_callback);
+  Bat_volt->connect_to(new SKOutputFloat(
+      "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V", "Batterie voltage")));
+   
+   
+
+ 
 
   // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
   vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))

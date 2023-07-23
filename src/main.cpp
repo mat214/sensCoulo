@@ -114,7 +114,7 @@ return (i);
 
 
 auto lecture_etat = [](String etat)->void {
-if (etat = "float") {
+if ((etat = "float") or (etat = "Float")) {
   Cap = CapNomiPeuk;  
 }
 };
@@ -268,12 +268,12 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
    
   // connexion signalk 
   // etat de charge pour rénitialisation
-  auto* skModeCharge =  new SKValueListener<String>("batterieskpatch", 2000);
+  auto* skModeCharge =  new SKValueListener<String>("electrical.charger.batterie.chargingMode", 2000);
   skModeCharge->connect_to(new LambdaConsumer<String>(lecture_etat));
-
+ 
 
   // LambaTransform courant circuit courant chargeur  - courant baterie
-  auto* skCharge =  new SKValueListener<float>("courrant", 1000);
+  auto* skCharge =  new SKValueListener<float>("electrical.solar.victronDevice.loadCurrent", 1000);
   skCharge->connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))
     ->connect_to(new SKOutputFloat("electrical.circuit.current", new SKMetadata("A", "Circuit courant")));
 

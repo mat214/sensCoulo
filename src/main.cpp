@@ -20,12 +20,7 @@
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
-
-
-// NOTE: IMPORTANT! Victron MPPT chargers use a 5V VE.Direct interface, so
-// a logic level converter or a voltage divider MUST be used to interface the
-// devices. You _will_ damage the ESP32 device is you fail to do so!
-
+//ina226
 #include <Wire.h>
 #include <INA226.h>
 
@@ -267,7 +262,7 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
   auto* bat_pour = new RepeatSensor<float>(1000, read_pourCharge_callback);
   bat_pour->connect_to(new SKOutputFloat("electrical.battery.capacity.stateOfCharge", new SKMetadata("%", "Pourcentage capacitée")));
 
-  auto* Bat_volt = new RepeatSensor<float>(2000, read_volt_callback);
+  auto* Bat_volt = new RepeatSensor<float>(1000, read_volt_callback);
   Bat_volt->connect_to(new SKOutputFloat(
       "electrical.battery.voltage", new SKMetadata("V", "Batterie voltage")));
    

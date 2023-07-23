@@ -9,6 +9,7 @@
 #include "sensesp/transforms/lambda_transform.h"
 #include "sensesp_app_builder.h"
 #include "sevedirect/sensors/vedirect.h"
+#include "sensesp/signalk/signalk_value_listener.h"
 // #include "sensesp\system\configurable.h"
 #include "ui_configurables.h"
 
@@ -31,8 +32,7 @@ DallasTemperature sensors(&oneWire);
 
 // constante
 const int t_callback = 100; // conf de la durée de la boucles courrent en milliseconde 
-constexpr int kTXPin = 13; // Pin TX de Vedirect
-constexpr int kRXPin = 27; // Pin RX de VeDirect
+
 
 // variable configurable
 IntConfig *CapaNominal;// Capacité batterie à renseigner en Ah ici ou dans le WebUI
@@ -44,7 +44,7 @@ IntConfig *CT; //temps décharge
 int CapNomiPeuk;
 bool premierDemarage = true;
 float PourCharge = 100;
-String EtatCharge;
+
 double Cap;
 float v = 12;
 INA226 ina(Wire);
@@ -109,12 +109,14 @@ auto amp_to_cap_function = [](float courant) ->float {
 return (Cap);
 };
 
+/**
 //********** bug a vérifier donnée incohérente !!!!! ***************
 // courant consomation circuit
 auto lambada_courant_circuit = [](float i) ->float {
 i = (- i ) - ina.readShuntCurrent();
 return (i);
 };
+
 
 // traduction int soc en string et initialisation au float
 auto Etat_text = [](int soc) ->String {
@@ -143,7 +145,13 @@ auto Etat_text = [](int soc) ->String {
                   return EtatCharge = "NA";
           }
 };
+*/
 
+auto lecture_etat = [](String etat)->void {
+if (etat = "float") {
+  Cap = CapNomiPeuk;  
+}
+};
 
 // check config INA
 void checkConfig()
@@ -276,31 +284,12 @@ CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée construc
 // définition de la capacité de Peukert
 CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(Coef->get_value())));
 
-
-
-  // initialize Serial1 Vedirect on the opto_in pin
-  Serial1.begin(19200, SERIAL_8N1, kRXPin, kTXPin, false);
-
-  // Flux VEDirect MPTT
-  VEDirectInput* vedi = new VEDirectInput(&Serial1);
- // vedi->parser.data.channel_1_battery_voltage.connect_to(new SKOutputFloat(
- //     "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V", "Batterie voltage")));
-  vedi->parser.data.channel_1_battery_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A", "Chargeur courant")));
-  vedi->parser.data.load_current.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelCurrent", new SKMetadata("A", "Panneau courant")));
-  vedi->parser.data.panel_voltage.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelVoltage", new SKMetadata("V", "Panneau voltage")));
-  vedi->parser.data.panel_power.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".panelPower", new SKMetadata("W", "Panneau puissance")));
-  vedi->parser.data.yield_today.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".yieldToday", new SKMetadata("Wh", "Panneau Wh jour")));
-  vedi->parser.data.maximum_power_today.connect_to(new SKOutputFloat(
-      "electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".maxPowerToday", new SKMetadata("W", "Panneau max puissance")));
-
+/**
   // LambaTransform courant circuit courant chargeur  - courant baterie
   vedi->parser.data.channel_1_battery_current.connect_to(new LambdaTransform<float, float>(lambada_courant_circuit))
     ->connect_to(new SKOutputFloat("electrical.circuit." SOLAR_CHARGE_CONTROLLER_ID ".current", new SKMetadata("A", "Circuit courant")));
+**/
+
 
   // Sensor lié à la meusure INA
   auto* bat_current = new RepeatSensor<float>(t_callback, read_amp_callback);
@@ -317,14 +306,16 @@ CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(
   Bat_volt->connect_to(new SKOutputFloat(
       "electrical.battery." SOLAR_CHARGE_CONTROLLER_ID ".voltage", new SKMetadata("V", "Batterie voltage")));
    
-   
+  // connexion signalk 
+  auto* skModeCharge =  new SKValueListener<String>("batterieskpatch", 2000);
+  skModeCharge->connect_to(new LambdaConsumer<String>(lecture_etat));
 
  
-
+/**
   // LambaTransform du numéro soc ve.direct en txt + initialisation capacité bat au float
   vedi->parser.data.state_of_operation.connect_to(new LambdaTransform<int, String>(Etat_text))
       ->connect_to(new SKOutputString("electrical.solar." SOLAR_CHARGE_CONTROLLER_ID ".chargingMode", new SKMetadata("", "Mode de charge")));
-
+**/
 
   // sensor température
    auto* bat_temp = new RepeatSensor<float>(t_callback, requestTemperatures_callback);

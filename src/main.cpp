@@ -79,7 +79,7 @@ float read_amp_callback() {
 float read_volt_callback() {
 float Vi = v;
 v = ina.readBusVoltage();
-if ((Vi > 14,75) and (v > 13,75) and (v < 13,85)) {
+if ((Vi > 14.55) and (v > 13.50) and (v < 13.85)) {
 Cap = CapNomiPeuk;  
 } 
 return v;
@@ -99,7 +99,9 @@ auto amp_to_cap_function = [](float courant) ->float {
             Cap = Cap + (courant * (ChargeEfficiencyFactor->get_value() / 100) / t);
         } else {
             float c = - courant;
-            Cap = Cap - (pow(c, Coef->get_value()) / t);
+            float pk =  Coef->get_value();
+
+            Cap = Cap - (pow(c, pk) / t);
         }
       if (Cap > CapNomiPeuk) {Cap = CapNomiPeuk;}
         PourCharge = Cap / CapNomiPeuk * 100;  
@@ -269,7 +271,7 @@ void setup() {
 CapaNominal = new IntConfig(70, "/Configuration/Capacité Batérie", "en Ah", 100);
 Coef = new FloatConfig(1.24, "/Configuration/Coef de Peukert","", 100);
 ChargeEfficiencyFactor = new FloatConfig(90, "/Configuration/Efficience de charge","en %", 100);
-CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 20);
+CT = new IntConfig(20, "/Configuration/CT", "Temps de décharge donnée constructeur K100 = 100, K20 = 20, K5 = 5", 100);
 
 // définition de la capacité de Peukert
 CapNomiPeuk = CT->get_value() *(pow((CapaNominal->get_value()/CT->get_value()),(Coef->get_value())));
